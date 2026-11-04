@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 120" width="450" height="120">
+  <defs>
+    <linearGradient id="mv" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1D4ED8"/>
+      <stop offset="1" stop-color="#06B6D4"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(2,4) scale(0.1094)">
+    <rect x="40" y="40" width="944" height="944" rx="208" fill="url(#mv)"/>
+    <path d="M276 724V316L512 572L748 316V724" fill="none" stroke="#FFFFFF" stroke-width="124" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="130" y="82" font-family="Segoe UI Variable Display, Segoe UI, Arial, sans-serif" font-size="64" font-weight="700" fill="#FFFFFF">Mohi<tspan fill="#38BDF8">View</tspan></text>
+</svg>
