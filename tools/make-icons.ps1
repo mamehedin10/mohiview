@@ -3,10 +3,15 @@
     logo file the RustDesk Windows build needs into overlay\ (same relative paths
     as inside the rustdesk source tree).
 
-    Run:  powershell -NoProfile -ExecutionPolicy Bypass -File tools\make-icons.ps1
+    Run:  powershell -NoProfile -ExecutionPolicy Bypass -File tools\make-icons.ps1 [-Target windows|mac|all]
+    windows -> overlay\ (shared by both builds); mac -> mac\overlay\ and mac\MohiView.iconset\
 
     Pure ASCII on purpose: Windows PowerShell 5.1 misreads UTF-8 without a BOM.
 #>
+param(
+    [ValidateSet('windows', 'mac', 'all')]
+    [string]$Target = 'all'
+)
 $ErrorActionPreference = 'Stop'
 $root    = Split-Path -Parent $PSScriptRoot
 $brand   = Join-Path $root 'branding'
@@ -104,6 +109,8 @@ function Render-Svg([string]$svg, [int]$w, [int]$h, [string]$outPng) {
 function Ensure-Dir([string]$path) { New-Item -ItemType Directory -Force -Path $path | Out-Null }
 
 $icon = Join-Path $brand 'icon.svg'
+
+if ($Target -ne 'mac') {
 $res = Join-Path $overlay 'res'
 $assets = Join-Path $overlay 'flutter\assets'
 $runnerRes = Join-Path $overlay 'flutter\windows\runner\resources'
@@ -136,8 +143,32 @@ Copy-Item (Join-Path $work 'icon-48.png') (Join-Path $assets 'icon.png') -Force
 Copy-Item (Join-Path $res 'icon.ico') (Join-Path $assets 'icon.ico') -Force
 Render-Svg (Join-Path $brand 'logo-light.svg') 900 240 (Join-Path $assets 'logo_light.png')
 Render-Svg (Join-Path $brand 'logo-dark.svg')  900 240 (Join-Path $assets 'logo_dark.png')
+}
+
+if ($Target -ne 'windows') {
+    # macOS: app icon set (turned into AppIcon.icns by iconutil on the Mac runner),
+    # the 1024 px mac-icon.png, and the menu-bar template icons (shape only).
+    $mac = Join-Path $root 'mac'
+    $iconset = Join-Path $mac 'MohiView.iconset'
+    $macRes = Join-Path $mac 'overlay\res'
+    Ensure-Dir $iconset; Ensure-Dir $macRes
+    $sets = [ordered]@{
+        'icon_16x16.png' = 16; 'icon_16x16@2x.png' = 32; 'icon_32x32.png' = 32; 'icon_32x32@2x.png' = 64
+        'icon_128x128.png' = 128; 'icon_128x128@2x.png' = 256; 'icon_256x256.png' = 256
+        'icon_256x256@2x.png' = 512; 'icon_512x512.png' = 512; 'icon_512x512@2x.png' = 1024
+    }
+    foreach ($name in $sets.Keys) { Render-Svg $icon $sets[$name] $sets[$name] (Join-Path $iconset $name) }
+    Copy-Item (Join-Path $iconset 'icon_512x512@2x.png') (Join-Path $macRes 'mac-icon.png') -Force
+    $tray = Join-Path $brand 'tray-template.svg'
+    Render-Svg $tray 60 60 (Join-Path $macRes 'mac-tray-dark-x2.png')
+    Render-Svg $tray 48 48 (Join-Path $macRes 'mac-tray-light-x2.png')
+}
 
 Remove-Item -Recurse -Force $work -ErrorAction SilentlyContinue
-Get-ChildItem -Recurse -File $overlay | ForEach-Object {
-    '{0,-60} {1,8}' -f $_.FullName.Substring($overlay.Length + 1), $_.Length
+foreach ($dir in @($overlay, (Join-Path $root 'mac'))) {
+    if (Test-Path $dir) {
+        Get-ChildItem -Recurse -File $dir -Include *.png, *.ico, *.svg | ForEach-Object {
+            '{0,-60} {1,8}' -f $_.FullName.Substring($root.Length + 1), $_.Length
+        }
+    }
 }

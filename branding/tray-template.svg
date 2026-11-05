@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- macOS menu-bar template: only the shape (alpha) is used, macOS picks the colour. -->
+  <path d="M212 840V184L512 516L812 184V840" fill="none" stroke="#000000" stroke-width="156" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
