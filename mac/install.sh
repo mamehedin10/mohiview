@@ -34,10 +34,39 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# GitHub's download servers sometimes answer 502/503/504 for a moment: retry.
+CURL_RETRY=(--retry 5 --retry-delay 3 --retry-connrefused)
+
 say "Downloading $APP for Mac ($ARCH)..."
-curl -fL --progress-bar -o "$TMP/$DMG" "$BASE/$DMG" || fail "Download failed. Check the internet connection."
-curl -fsSL -o "$TMP/$SUMS" "$BASE/$SUMS" || fail "Could not download the checksum file."
-expected="$(awk -v f="$DMG" '{ n = $2; sub(/^\*/, "", n); if (n == f) print $1 }' "$TMP/$SUMS")"
+curl -fL "${CURL_RETRY[@]}" --progress-bar -o "$TMP/$DMG" "$BASE/$DMG" \
+  || fail "Download failed. Check the internet connection and run the command again."
+
+expected=""
+if curl -fsSL "${CURL_RETRY[@]}" -o "$TMP/$SUMS" "$BASE/$SUMS"; then
+  expected="$(awk -v f="$DMG" '{ n = $2; sub(/^\*/, "", n); if (n == f) print $1 }' "$TMP/$SUMS")"
+fi
+if [ -z "$expected" ]; then
+  # Fallback: the SHA-256 that GitHub itself records for the release file.
+  echo "Checksum file not available, asking GitHub's API instead..."
+  if curl -fsSL "${CURL_RETRY[@]}" -o "$TMP/release.json" "https://api.github.com/repos/$REPO/releases/latest"; then
+    cat > "$TMP/digest.js" <<'JS'
+ObjC.import('Foundation');
+function run(argv) {
+  var data = $.NSData.dataWithContentsOfFile(argv[0]);
+  var text = $.NSString.alloc.initWithDataEncoding(data, $.NSUTF8StringEncoding).js;
+  var assets = JSON.parse(text).assets || [];
+  for (var i = 0; i < assets.length; i++) {
+    if (assets[i].name === argv[1] && assets[i].digest) {
+      return String(assets[i].digest).replace(/^sha256:/, '');
+    }
+  }
+  return '';
+}
+JS
+    expected="$(osascript -l JavaScript "$TMP/digest.js" "$TMP/release.json" "$DMG" 2>/dev/null || true)"
+  fi
+fi
+[ -n "$expected" ] || fail "Could not get the checksum from GitHub. Wait a minute and run the command again."
 actual="$(shasum -a 256 "$TMP/$DMG" | awk '{ print $1 }')"
 if [ -z "$expected" ] || [ "$expected" != "$actual" ]; then
   fail "Checksum mismatch: the download is broken or tampered with. Nothing was installed."
