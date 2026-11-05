@@ -89,22 +89,27 @@ echo "Installed $APP_DIR"
 say "Opening $APP and the permission settings..."
 open "$APP_DIR"
 sleep 3
-open "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"
 cat <<EOF
 
-Apple requires these to be switched on by hand, once:
-  1. Privacy & Security > Screen & System Audio Recording: turn ON "$APP"
-     (if macOS asks to quit and reopen $APP, allow it)
-  2. Privacy & Security > Accessibility: turn ON "$APP"
-     (this page opens after you press Enter)
-  3. In the $APP window: if it offers to install or start the service,
-     click it and enter your Mac password. This lets the office connect
-     without anyone at this Mac.
+Apple requires 3 permissions, switched on by hand, once. The $APP window
+shows a box with a "Configure" button for each one. Click it, then turn
+ON "$APP" on the settings page that opens:
+
+  1. Screen Recording  (if macOS asks to Quit & Reopen $APP, allow it)
+  2. Accessibility     (without it the office sees the screen, but the
+                        mouse and keyboard do nothing)
+  3. Input Monitoring
+
+If "$APP" is not in a list, click "+" under the list and choose
+Applications > $APP. This script opens each page for you as well.
 
 EOF
-read -r -p "Press Enter after step 1... " _ < /dev/tty
+open "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"
+read -r -p "Press Enter when Screen Recording is ON for $APP... " _ < /dev/tty
 open "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
-read -r -p "Press Enter after steps 2 and 3... " _ < /dev/tty
+read -r -p "Press Enter when Accessibility is ON for $APP... " _ < /dev/tty
+open "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent"
+read -r -p "Press Enter when Input Monitoring is ON for $APP... " _ < /dev/tty
 
 say "Setting a permanent password for unattended access..."
 PW="$(LC_ALL=C tr -dc 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789' < /dev/urandom 2>/dev/null | head -c 14 || true)"
@@ -129,4 +134,6 @@ else
   echo " In $APP open Settings > Security, set a permanent password, then send"
   echo " the ID and that password to the office privately."
 fi
+echo " If the office sees the screen but the mouse does nothing, turn ON"
+echo " $APP in System Settings > Privacy & Security > Accessibility."
 printf '\033[1;32m==============================================\033[0m\n'
