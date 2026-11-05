@@ -14,6 +14,8 @@ RustDesk's behaviour is not changed. `patches/apply_branding.py` changes only:
 - the built-in ID/relay server, `remote.brandivolabs.com`, and its public key
 - the Windows file properties (product name, company, copyright)
 - the links on the About page
+- the home-screen credit line under the logo: "Proudly Improved by Mohibullah Mehedi" (the RustDesk
+  credit and license stay on the About page)
 - the icons and logos in `overlay/`, made from `branding/*.svg` by `tools/make-icons.ps1`
 
 Every edit says how many times it must match, so the build stops if upstream code moves instead of

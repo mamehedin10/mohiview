@@ -19,11 +19,15 @@ COMPANY = "Brandivo Labs"
 SERVER = "remote.brandivolabs.com"
 KEY = "6SnjPxxIqKEigkVh5oyLOdybN985sLKctewuicFufxg="
 WEBSITE = "https://github.com/mamehedin10/mohiview"
+PORTAL = "https://remote.brandivolabs.com"
+CREDIT = "Proudly Improved by Mohibullah Mehedi"
 COPYRIGHT = "Copyright " + chr(0xA9) + " 2026 " + COMPANY + ". Based on RustDesk (AGPL-3.0)."
 
 CONFIG_RS = "libs/hbb_common/src/config.rs"
 RUNNER_RC = "flutter/windows/runner/Runner.rc"
 SETTINGS_DART = "flutter/lib/desktop/pages/desktop_setting_page.dart"
+COMMON_DART = "flutter/lib/common.dart"
+HOME_DART = "flutter/lib/desktop/pages/desktop_home_page.dart"
 
 # (file, kind, pattern, replacement, expected matches); kind is "lit" or "re"
 EDITS = [
@@ -83,6 +87,27 @@ EDITS = [
      "} %s. Based on RustDesk (AGPL-3.0)." % COMPANY, 1),
     ("flutter/lib/desktop/pages/install_page.dart", "lit", "'https://rustdesk.com/privacy.html'",
      "'%s'" % WEBSITE, 2),
+
+    # Home screen credit line (custom clients show it in place of "Powered by RustDesk";
+    # the RustDesk credit stays on the About page). Larger and clearer than upstream,
+    # links to our portal, and sits under the logo instead of above it.
+    (COMMON_DART, "lit", 'translate("powered_by_me"),', "'%s'," % CREDIT, 1),
+    (COMMON_DART, "lit", "launchUrl(Uri.parse('https://rustdesk.com'));",
+     "launchUrl(Uri.parse('%s'));" % PORTAL, 1),
+    (COMMON_DART, "lit", "opacity: 0.5,", "opacity: 0.85,", 1),
+    (COMMON_DART, "lit", "?.copyWith(fontSize: 9, decoration: TextDecoration.underline),",
+     "?.copyWith(fontSize: 11, fontWeight: FontWeight.w600),", 1),
+    (HOME_DART, "re",
+     r"(      if \(bind\.isCustomClient\(\)\)\r?\n"
+     r"        Align\(\r?\n"
+     r"          alignment: Alignment\.center,\r?\n"
+     r"          child: loadPowered\(context\),\r?\n"
+     r"        \),\r?\n)"
+     r"(      Align\(\r?\n"
+     r"        alignment: Alignment\.center,\r?\n"
+     r"        child: loadLogo\(\),\r?\n"
+     r"      \),\r?\n)",
+     lambda m: m.group(2) + m.group(1), 1),
 ]
 
 
@@ -98,7 +123,8 @@ def apply_edits(root):
             found = text.count(pattern)
             new_text = text.replace(pattern, replacement)
         else:
-            new_text, found = re.subn(pattern, lambda _m: replacement, text)
+            repl = replacement if callable(replacement) else (lambda _m, r=replacement: r)
+            new_text, found = re.subn(pattern, repl, text)
         if found != expected:
             errors.append("%s: expected %d match(es) of %r, found %d" % (rel, expected, pattern, found))
             continue
