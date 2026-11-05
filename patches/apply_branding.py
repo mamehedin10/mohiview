@@ -20,7 +20,9 @@ SERVER = "remote.brandivolabs.com"
 KEY = "6SnjPxxIqKEigkVh5oyLOdybN985sLKctewuicFufxg="
 WEBSITE = "https://github.com/mamehedin10/mohiview"
 PORTAL = "https://remote.brandivolabs.com"
-CREDIT = "Proudly Improved by Mohibullah Mehedi"
+# Two centred lines: one line wraps unevenly in the narrow left pane.
+CREDIT_LINES = ("Proudly Improved by", "Mohibullah Mehedi")
+DART_NEWLINE = chr(92) + "n"
 COPYRIGHT = "Copyright " + chr(0xA9) + " 2026 " + COMPANY + ". Based on RustDesk (AGPL-3.0)."
 
 CONFIG_RS = "libs/hbb_common/src/config.rs"
@@ -91,12 +93,13 @@ EDITS = [
     # Home screen credit line (custom clients show it in place of "Powered by RustDesk";
     # the RustDesk credit stays on the About page). Larger and clearer than upstream,
     # links to our portal, and sits under the logo instead of above it.
-    (COMMON_DART, "lit", 'translate("powered_by_me"),', "'%s'," % CREDIT, 1),
+    (COMMON_DART, "lit", 'translate("powered_by_me"),',
+     "'%s', textAlign: TextAlign.center," % DART_NEWLINE.join(CREDIT_LINES), 1),
     (COMMON_DART, "lit", "launchUrl(Uri.parse('https://rustdesk.com'));",
      "launchUrl(Uri.parse('%s'));" % PORTAL, 1),
     (COMMON_DART, "lit", "opacity: 0.5,", "opacity: 0.85,", 1),
     (COMMON_DART, "lit", "?.copyWith(fontSize: 9, decoration: TextDecoration.underline),",
-     "?.copyWith(fontSize: 11, fontWeight: FontWeight.w600),", 1),
+     "?.copyWith(fontSize: 12, fontWeight: FontWeight.w600, height: 1.3),", 1),
     (HOME_DART, "re",
      r"(      if \(bind\.isCustomClient\(\)\)\r?\n"
      r"        Align\(\r?\n"
